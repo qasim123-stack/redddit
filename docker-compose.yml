@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: reddit_postgres
+    environment:
+      POSTGRES_USER: reddit_user
+      POSTGRES_PASSWORD: reddit_password
+      POSTGRES_DB: reddit_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reddit_user -d reddit_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - reddit_network
+
+  # Redis for Celery
+  redis:
+    image: redis:7-alpine
+    container_name: reddit_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - reddit_network
+
+  # pgAdmin (Optional - for database management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: reddit_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - reddit_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  reddit_network:
+    driver: bridge
