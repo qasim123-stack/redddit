@@ -23,6 +23,8 @@ celery_app.conf.update(
     task_soft_time_limit=25 * 60,  # 25 minutes
     worker_prefetch_multiplier=1,
     worker_max_tasks_per_child=1000,
+    worker_pool='threads',  # ← ADD THIS (Windows compatibility)
+    result_expires=3600,  # Results expire after 1 hour
 )
 
 # Task routes (optional - for organizing tasks)

@@ -1,60 +1,46 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
-    container_name: reddit_postgres
+    image: postgres:16
+    container_name: reddit-postgres
+    restart: always
+
     environment:
-      POSTGRES_USER: reddit_user
-      POSTGRES_PASSWORD: reddit_password
-      POSTGRES_DB: reddit_db
+      POSTGRES_DB: reddit-database
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: qasim123
+
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U reddit_user -d reddit_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - reddit_network
-
-  # Redis for Celery
+    
   redis:
     image: redis:7-alpine
-    container_name: reddit_redis
+    container_name: reddit-redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - reddit_network
 
-  # pgAdmin (Optional - for database management)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: reddit_pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
     ports:
-      - "5050:80"
-    depends_on:
-      - postgres
-    networks:
-      - reddit_network
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    volumes:
+      - mongo_data:/data/db
+    restart: always
+
+   
+
+
 
 volumes:
   postgres_data:
   redis_data:
-
-networks:
-  reddit_network:
-    driver: bridge
+  mongo_data:

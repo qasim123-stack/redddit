@@ -13,7 +13,7 @@ reddit = praw.Reddit(
 )
 
 # Example: Get top 5 posts from r/Python
-subreddit = reddit.subreddit("Python")
+subreddit = reddit.subreddit("AiAutomations")
 
 print("Top 5 posts in r/Python:")
 for post in subreddit.hot(limit=5):

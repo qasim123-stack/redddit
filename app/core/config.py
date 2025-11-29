@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     ASYNC_DATABASE_URL: str
 
+    # MongoDB
+    MONGODB_URL: str
+
     # Redis & Celery
     REDIS_URL: str
     CELERY_BROKER_URL: str

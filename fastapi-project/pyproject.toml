@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "fastapi-project"
+version = "0.1.0"
+description = "FastAPI project with Poetry and Uvicorn"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fastapi = "^0.104.1"
+uvicorn = {extras = ["standard"], version = "^0.24.0"}
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.3"
+httpx = "^0.25.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
