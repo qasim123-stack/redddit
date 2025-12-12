@@ -44,7 +44,8 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index('idx_system_metrics_name', 'system_metrics', ['metric_name'], unique=False)
-    op.create_index('idx_system_metrics_tags', 'system_metrics', ['tags'], unique=False, postgresql_using='gin')
+    # Note: GIN index on JSON columns removed - use JSONB if needed
+    # op.create_index('idx_system_metrics_tags', 'system_metrics', ['tags'], unique=False, postgresql_using='gin')
     op.create_index('idx_system_metrics_timestamp', 'system_metrics', ['timestamp'], unique=False)
     op.create_table('users',
     sa.Column('email', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -668,7 +669,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_table('users')
     op.drop_index('idx_system_metrics_timestamp', table_name='system_metrics')
-    op.drop_index('idx_system_metrics_tags', table_name='system_metrics', postgresql_using='gin')
+    # op.drop_index('idx_system_metrics_tags', table_name='system_metrics', postgresql_using='gin')
     op.drop_index('idx_system_metrics_name', table_name='system_metrics')
     op.drop_table('system_metrics')
     # ### end Alembic commands ###
