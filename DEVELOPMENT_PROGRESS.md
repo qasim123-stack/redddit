@@ -35,7 +35,7 @@
 - ✅ **Monitoring API** - Endpoints to trigger Reddit fetching
 - ✅ **Test Data Script** - Create test users and profiles
 
-### Phase 3: Authentication System (IN PROGRESS)
+### Phase 3: Authentication System (COMPLETED)
 - ✅ **JWT Authentication** - Token-based auth implemented
 - ✅ **Password Hashing** - Bcrypt for secure passwords
 - ✅ **Auth Endpoints Created:**
@@ -43,62 +43,75 @@
   - `POST /api/auth/login` - User login with JWT
   - `GET /api/auth/me` - Get current user info
 - ✅ **Security Utilities** - JWT encoding/decoding, password verification
-- ⏳ **Testing** - Need to test registration and login flow
+- ✅ **OAuth2 Bearer Token Support** - OAuth2PasswordBearer scheme
+- ✅ **get_current_user Dependency** - Reusable auth dependency for protected routes
+
+### Phase 4: Profile Management API (COMPLETED)
+- ✅ **Profile CRUD Endpoints:**
+  - `POST /api/profiles` - Create monitoring profile
+  - `GET /api/profiles` - List user's profiles (with pagination)
+  - `GET /api/profiles/{id}` - Get specific profile
+  - `PUT /api/profiles/{id}` - Update profile
+  - `PATCH /api/profiles/{id}` - Partial update profile
+  - `DELETE /api/profiles/{id}` - Delete profile
+- ✅ **Profile Actions:**
+  - `POST /api/profiles/{id}/activate` - Activate monitoring
+  - `POST /api/profiles/{id}/deactivate` - Pause monitoring
+  - `GET /api/profiles/{id}/stats` - Get profile statistics
+- ✅ **Authorization** - Users can only access their own profiles
+- ✅ **ProfileUpdate Schema** - Enhanced with all configurable fields
 
 ---
 
 ## 🚧 In Progress
 
-### Week 1: Core Reddit Integration
+### Week 1: Core Reddit Integration (NEARLY COMPLETE)
 - ✅ Update Celery tasks to use SQLModel
 - ✅ Implement authentication system
+- ✅ Create Profile Management API
 - ⏳ Test end-to-end Reddit data flow
-- ⏳ Create Profile Management API
 - ⏳ Link profiles to fetching tasks
 
 **Current Status:**
-- Authentication endpoints created
-- Need to install new dependencies: `python-jose`, `passlib`, `bcrypt`
-- Need to test registration and login
-- Next: Profile CRUD API
+- Authentication system fully implemented with OAuth2 Bearer tokens
+- Profile Management API complete with full CRUD + activate/deactivate
+- Next: Link profiles to Reddit monitoring tasks
 
 ---
 
 ## 📋 TODO - Week 1 Remaining
 
 ### Immediate Tasks
-1. **Install Auth Dependencies**
-   ```bash
-   poetry install
-   ```
 
-2. **Test Authentication**
+1. **Link Profiles to Monitoring API**
+   - Accept `profile_id` parameter in monitoring endpoints
+   - Extract `user_id` from JWT token
+   - Pass IDs to Celery tasks
+
+2. **End-to-End Testing**
    ```bash
-   # Register new user
+   # 1. Register new user
    curl -X POST http://localhost:8000/api/auth/register \
      -H "Content-Type: application/json" \
      -d '{"email": "testuser@example.com", "password": "securepass123", "full_name": "Test User"}'
 
-   # Login
-   curl -X POST http://localhost:8000/api/auth/login \
+   # 2. Create a profile (use token from registration)
+   curl -X POST http://localhost:8000/api/profiles \
      -H "Content-Type: application/json" \
-     -d '{"email": "testuser@example.com", "password": "securepass123"}'
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -d '{"name": "Python Monitoring", "subreddits": ["python", "learnpython"], "keywords": ["FastAPI", "async"]}'
+
+   # 3. List profiles
+   curl http://localhost:8000/api/profiles \
+     -H "Authorization: Bearer YOUR_TOKEN"
+
+   # 4. Get profile stats
+   curl http://localhost:8000/api/profiles/1/stats \
+     -H "Authorization: Bearer YOUR_TOKEN"
    ```
 
-3. **Create Profile Management API** (`app/api/profiles.py`)
-   - POST /api/profiles - Create monitoring profile
-   - GET /api/profiles - List user's profiles
-   - GET /api/profiles/{id} - Get specific profile
-   - PUT /api/profiles/{id} - Update profile
-   - DELETE /api/profiles/{id} - Delete profile
-
-4. **Update Monitoring API**
-   - Accept `profile_id` parameter
-   - Extract `user_id` from JWT token
-   - Pass IDs to Celery tasks
-
-5. **End-to-End Testing**
-   - Register user → Create profile → Trigger fetch → Verify posts saved
+3. **Trigger Reddit Fetch with Profile**
+   - Connect profile settings to Reddit monitoring tasks
 
 ---
 
@@ -209,8 +222,7 @@
 - ✅ Import errors in Celery tasks (fixed)
 
 ### Open
-- ⚠️ No authentication middleware yet (can access all endpoints)
-- ⚠️ Profile CRUD not implemented
+- ⚠️ Monitoring API not yet integrated with profiles
 - ⚠️ No AI analysis yet
 - ⚠️ Comments not stored (Comment table not in schema)
 
@@ -251,5 +263,5 @@
 
 ---
 
-**Last Commit:** Update Celery tasks to use SQLModel
-**Next Milestone:** Complete Week 1 - Core Reddit Integration ✅
+**Last Commit:** Add Profile Management API with full CRUD
+**Next Milestone:** Link profiles to Reddit monitoring tasks

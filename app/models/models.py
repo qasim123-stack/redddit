@@ -153,15 +153,18 @@ class ProfileCreate(ProfileBase):
 
 
 class ProfileRead(ProfileBase):
+    """Schema for reading profile data"""
     id: int
     user_id: int
     last_fetch_at: Optional[datetime]
     total_posts_fetched: int
     total_posts_analyzed: int
     created_at: datetime
+    updated_at: datetime
 
 
 class ProfileUpdate(SQLModel):
+    """Schema for updating profile - all fields optional"""
     name: Optional[str] = None
     description: Optional[str] = None
     is_active: Optional[bool] = None
@@ -169,6 +172,16 @@ class ProfileUpdate(SQLModel):
     subreddits: Optional[List[str]] = None
     competitor_keywords: Optional[List[str]] = None
     polling_frequency_minutes: Optional[int] = Field(default=None, ge=5)
+    fetch_limit_per_subreddit: Optional[int] = None
+    historical_days: Optional[int] = None
+    enable_sentiment: Optional[bool] = None
+    enable_intent: Optional[bool] = None
+    enable_pain_detection: Optional[bool] = None
+    enable_entity_extraction: Optional[bool] = None
+    enable_topic_extraction: Optional[bool] = None
+    enable_embedding: Optional[bool] = None
+    crisis_threshold_multiplier: Optional[Decimal] = None
+    trend_growth_threshold: Optional[Decimal] = None
 
 
 # ============================================

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.database import init_db
-from app.api import posts, monitoring, auth
+from app.api import posts, monitoring, auth, profiles
 import logging
 
 # Configure logging
@@ -101,6 +101,7 @@ def health_check():
 
 # Include API routers
 app.include_router(auth.router, prefix="/api")
+app.include_router(profiles.router, prefix="/api")
 app.include_router(posts.router, prefix="/api")
 app.include_router(monitoring.router, prefix="/api")
 
