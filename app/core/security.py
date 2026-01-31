@@ -81,3 +81,75 @@ def decode_access_token(token: str) -> Optional[dict]:
         return payload
     except JWTError:
         return None
+
+
+# FastAPI dependencies for authentication
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlmodel import Session, select
+
+security_scheme = HTTPBearer()
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    db: Session = Depends(lambda: None)  # Placeholder, will be injected properly
+):
+    """
+    FastAPI dependency to get the current authenticated user from JWT token.
+
+    Use this as a dependency in protected routes:
+        @router.get("/protected")
+        def protected_route(current_user: User = Depends(get_current_user)):
+            ...
+    """
+    from app.models import User
+    from app.database import get_db
+
+    token = credentials.credentials
+    payload = decode_access_token(token)
+
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # We need to get db session properly - this will be done in the route
+    return int(user_id)
+
+
+def get_current_user_with_db(
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+):
+    """
+    Returns the user_id from JWT token. Use with db session in route.
+    """
+    token = credentials.credentials
+    payload = decode_access_token(token)
+
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return int(user_id)
