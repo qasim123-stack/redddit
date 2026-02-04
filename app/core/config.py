@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # OpenAI (GPT-4o-mini for AI analysis)
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_MAX_TOKENS: int = 1000
+    OPENAI_TEMPERATURE: float = 0.1
+
     # Monitoring
     SUBREDDITS_TO_MONITOR: str = "AiAutomations,Python"
 
