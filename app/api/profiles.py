@@ -61,6 +61,15 @@ def create_profile(
 
     logger.info(f"Profile created: {new_profile.name} (ID: {new_profile.id}) by user {current_user_id}")
 
+    # Trigger the full pipeline: fetch all subreddits → analyze posts
+    if new_profile.subreddits:
+        try:
+            from app.tasks.pipeline_tasks import process_new_profile_task
+            process_new_profile_task.delay(new_profile.id)
+            logger.info(f"Pipeline started for profile {new_profile.id}")
+        except Exception as e:
+            logger.exception(f"Failed to start pipeline for profile {new_profile.id}: {e}")
+
     return new_profile
 
 
@@ -342,6 +351,15 @@ def activate_profile(
 
     logger.info(f"Profile activated: {profile.name} (ID: {profile.id})")
 
+    # Trigger refresh pipeline when profile is activated
+    if profile.subreddits:
+        try:
+            from app.tasks.pipeline_tasks import refresh_profile_task
+            refresh_profile_task.delay(profile.id, analyze=True)
+            logger.info(f"Refresh pipeline started for activated profile {profile.id}")
+        except Exception as e:
+            logger.exception(f"Failed to start refresh for profile {profile.id}: {e}")
+
     return profile
 
 
@@ -386,6 +404,56 @@ def deactivate_profile(
     logger.info(f"Profile deactivated: {profile.name} (ID: {profile.id})")
 
     return profile
+
+
+@router.post("/{profile_id}/refresh", status_code=status.HTTP_202_ACCEPTED)
+def refresh_profile(
+    profile_id: int,
+    analyze: bool = Query(True, description="Run AI analysis after fetching"),
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_with_db)
+):
+    """
+    Manually refresh a profile: fetch new posts and analyze them.
+
+    This triggers the full pipeline:
+    1. Fetch latest posts from all configured subreddits
+    2. Run AI analysis on new posts (if analyze=true)
+
+    Returns task IDs to track progress.
+    """
+    profile = db.exec(
+        select(Profile).where(
+            Profile.id == profile_id,
+            Profile.user_id == current_user_id
+        )
+    ).first()
+
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile not found"
+        )
+
+    if not profile.subreddits:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Profile has no subreddits configured"
+        )
+
+    from app.tasks.pipeline_tasks import refresh_profile_task
+    task = refresh_profile_task.delay(profile.id, analyze=analyze)
+
+    logger.info(f"Refresh triggered for profile {profile.id} (task: {task.id})")
+
+    return {
+        "status": "refresh_started",
+        "profile_id": profile.id,
+        "profile_name": profile.name,
+        "task_id": task.id,
+        "subreddits": profile.subreddits,
+        "analyze_enabled": analyze
+    }
 
 
 # ============================================
