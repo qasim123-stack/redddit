@@ -1,21 +1,54 @@
-# Generated from pyproject.toml
-# For systems without Poetry, run: pip install -r requirements.txt
+# Reddit AI Marketing Intelligence Platform
+# Install: pip install -r requirements.txt
 
+# ============================================
+# Core Framework
+# ============================================
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
+pydantic[email]==2.5.0
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+
+# ============================================
+# Database
+# ============================================
+sqlmodel==0.0.14
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
+asyncpg==0.29.0
 alembic==1.12.1
-pydantic==2.5.0
-pydantic-settings==2.1.0
+
+# ============================================
+# Authentication & Security
+# ============================================
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# ============================================
+# Background Tasks
+# ============================================
 celery[redis]==5.3.4
 redis==5.0.1
+
+# ============================================
+# Reddit API
+# ============================================
 praw==7.7.1
-python-dotenv==1.0.0
-asyncpg==0.29.0
+
+# ============================================
+# AI Analysis (OpenAI GPT-4o-mini)
+# ============================================
+openai>=1.0.0
+
+# ============================================
+# HTTP Client
+# ============================================
 httpx==0.25.2
 
-# Development dependencies
+# ============================================
+# Development Dependencies
+# ============================================
 pytest==7.4.3
 pytest-asyncio==0.21.1
 black==23.11.0

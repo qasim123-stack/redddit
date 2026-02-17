@@ -12,15 +12,15 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name="fetch_hot_posts")
-def fetch_hot_posts_task(subreddit_name: str, limit: int = 25, profile_id: int = None, user_id: int = None):
+def fetch_hot_posts_task(subreddit_name: str, user_id: int, profile_id: int, limit: int = 25):
     """
     Celery task to fetch hot posts from a subreddit and save to database
 
     Args:
         subreddit_name: Subreddit to fetch from
+        user_id: User ID who owns this data
+        profile_id: Profile ID for monitoring config
         limit: Number of posts to fetch
-        profile_id: Optional profile ID for monitoring config
-        user_id: Optional user ID who triggered this fetch
     """
     monitor = RedditMonitor()
 
@@ -61,8 +61,8 @@ def fetch_hot_posts_task(subreddit_name: str, limit: int = 25, profile_id: int =
                             processing_status="pending",
                             is_relevant=True,
                             is_archived=False,
-                            profile_id=profile_id or 1,  # TODO: Use actual profile_id
-                            user_id=user_id or 1,  # TODO: Use actual user_id
+                            profile_id=profile_id,
+                            user_id=user_id,
                             fetched_at=datetime.utcnow(),
                         )
                         db.add(post)
@@ -90,15 +90,15 @@ def fetch_hot_posts_task(subreddit_name: str, limit: int = 25, profile_id: int =
 
 
 @celery_app.task(name="fetch_post_comments")
-def fetch_post_comments_task(post_id: str, profile_id: int = None, user_id: int = None):
+def fetch_post_comments_task(post_id: str, user_id: int, profile_id: int):
     """
     Celery task to fetch a specific post and update its comment count
     Note: Comment storage not implemented in current schema
 
     Args:
         post_id: Reddit post ID
-        profile_id: Optional profile ID
-        user_id: Optional user ID
+        user_id: User ID who owns this data
+        profile_id: Profile ID for monitoring config
     """
     monitor = RedditMonitor()
 
@@ -129,8 +129,8 @@ def fetch_post_comments_task(post_id: str, profile_id: int = None, user_id: int 
                     processing_status="pending",
                     is_relevant=True,
                     is_archived=False,
-                    profile_id=profile_id or 1,
-                    user_id=user_id or 1,
+                    profile_id=profile_id,
+                    user_id=user_id,
                     fetched_at=datetime.utcnow(),
                 )
                 db.add(post)
@@ -156,15 +156,15 @@ def fetch_post_comments_task(post_id: str, profile_id: int = None, user_id: int 
 
 
 @celery_app.task(name="monitor_subreddit_stream")
-def monitor_subreddit_stream(subreddit_name: str, duration_minutes: int = 60, profile_id: int = None, user_id: int = None):
+def monitor_subreddit_stream(subreddit_name: str, user_id: int, profile_id: int, duration_minutes: int = 60):
     """
     Celery task to monitor a subreddit stream for a specified duration
 
     Args:
         subreddit_name: Subreddit to monitor
+        user_id: User ID who owns this data
+        profile_id: Profile ID for monitoring config
         duration_minutes: How long to monitor (in minutes)
-        profile_id: Optional profile ID
-        user_id: Optional user ID
     """
     monitor = RedditMonitor()
 
@@ -204,8 +204,8 @@ def monitor_subreddit_stream(subreddit_name: str, duration_minutes: int = 60, pr
                             processing_status="pending",
                             is_relevant=True,
                             is_archived=False,
-                            profile_id=profile_id or 1,
-                            user_id=user_id or 1,
+                            profile_id=profile_id,
+                            user_id=user_id,
                             fetched_at=datetime.utcnow(),
                         )
                         db.add(post)
