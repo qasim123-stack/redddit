@@ -1,32 +1,61 @@
 version: '3.8'
 
+# ============================================================
+# Reddit AI Marketing Intelligence Platform
+#
+# Services:
+#   Infrastructure:   postgres, redis, mongodb
+#   App:              api
+#   Celery workers:   worker-reddit, worker-ai, worker-pipeline
+#   Celery beat:      celery-beat (scheduler)
+#
+# Start everything:   docker-compose up -d
+# Start infra only:   docker-compose up -d postgres redis mongodb
+# View logs:          docker-compose logs -f celery-beat
+# ============================================================
+
 services:
+
+  # ============================================================
+  # INFRASTRUCTURE
+  # ============================================================
+
   postgres:
     image: postgres:16
     container_name: reddit-postgres
     restart: always
-
     environment:
       POSTGRES_DB: reddit-database
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: qasim123
-
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d reddit-database"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:7-alpine
     container_name: reddit-redis
+    restart: always
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mongodb:
     image: mongo:7
     container_name: mongodb
+    restart: always
     ports:
       - "27017:27017"
     environment:
@@ -34,11 +63,114 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: rootpassword
     volumes:
       - mongo_data:/data/db
+
+  # ============================================================
+  # FASTAPI APPLICATION
+  # ============================================================
+
+  api:
+    build: .
+    container_name: reddit-api
     restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
-   
+  # ============================================================
+  # CELERY WORKERS
+  # ============================================================
 
+  # Reddit fetching worker — 2 concurrent tasks
+  worker-reddit:
+    build: .
+    container_name: reddit-worker-reddit
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A app.core.celery_app worker
+      -Q reddit_monitor
+      -c 2
+      --loglevel=info
+      -n worker-reddit@%h
 
+  # AI analysis worker — 4 concurrent tasks (IO-bound, waiting on OpenAI)
+  worker-ai:
+    build: .
+    container_name: reddit-worker-ai
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A app.core.celery_app worker
+      -Q ai_analysis
+      -c 4
+      --loglevel=info
+      -n worker-ai@%h
+
+  # Pipeline/crisis/trend worker — 2 concurrent tasks
+  worker-pipeline:
+    build: .
+    container_name: reddit-worker-pipeline
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A app.core.celery_app worker
+      -Q pipeline
+      -c 2
+      --loglevel=info
+      -n worker-pipeline@%h
+
+  # ============================================================
+  # CELERY BEAT — Periodic task scheduler
+  # Sends tasks to the queue on schedule.
+  # Only ONE instance of beat should ever run at a time.
+  #
+  # Schedule (all UTC):
+  #   */5 min   — smart_refresh_due_profiles (per-profile polling)
+  #   :00/hr    — detect_crisis_all_active_profiles
+  #   :15/hr    — detect_trends_all_active_profiles
+  # ============================================================
+
+  celery-beat:
+    build: .
+    container_name: reddit-celery-beat
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A app.core.celery_app beat
+      --loglevel=info
+      --scheduler celery.beat:PersistentScheduler
+      -s /tmp/celerybeat-schedule
 
 volumes:
   postgres_data:

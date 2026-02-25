@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.database import init_db
-from app.api import posts, monitoring, auth, profiles, analysis, crisis
+from app.api import posts, monitoring, auth, profiles, analysis, crisis, trends
 import logging
 
 # Configure logging
@@ -106,6 +106,7 @@ app.include_router(posts.router, prefix="/api")
 app.include_router(monitoring.router, prefix="/api")
 app.include_router(analysis.router, prefix="/api")
 app.include_router(crisis.router, prefix="/api")
+app.include_router(trends.router, prefix="/api")
 
 
 if __name__ == "__main__":
