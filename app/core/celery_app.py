@@ -8,7 +8,12 @@ celery_app = Celery(
     "reddit_monitor",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
-    include=["app.tasks.reddit_tasks", "app.tasks.ai_tasks", "app.tasks.pipeline_tasks"]
+    include=[
+        "app.tasks.reddit_tasks",
+        "app.tasks.ai_tasks",
+        "app.tasks.pipeline_tasks",
+        "app.tasks.crisis_tasks",
+    ]
 )
 
 # Celery configuration
@@ -32,6 +37,7 @@ celery_app.conf.task_routes = {
     "app.tasks.reddit_tasks.*": {"queue": "reddit_monitor"},
     "app.tasks.ai_tasks.*": {"queue": "ai_analysis"},
     "app.tasks.pipeline_tasks.*": {"queue": "pipeline"},
+    "app.tasks.crisis_tasks.*": {"queue": "pipeline"},
 }
 
 if __name__ == "__main__":

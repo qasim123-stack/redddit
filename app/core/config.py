@@ -46,6 +46,17 @@ class Settings(BaseSettings):
     OPENAI_MAX_TOKENS: int = 1000
     OPENAI_TEMPERATURE: float = 0.1
 
+    # Notifications - Email (SMTP)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_USE_TLS: bool = True
+    SMTP_FROM_EMAIL: str = ""
+
+    # Notifications - Slack
+    SLACK_WEBHOOK_URL: str = ""
+
     # Monitoring
     SUBREDDITS_TO_MONITOR: str = "AiAutomations,Python"
 

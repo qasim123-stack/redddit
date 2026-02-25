@@ -65,10 +65,20 @@ def process_new_profile_task(profile_id: int):
             countdown=analysis_delay
         )
 
+        # Step 3: Queue crisis detection after analysis has had time to finish
+        # Add 60s buffer on top of analysis delay
+        from app.tasks.crisis_tasks import detect_crisis_for_profile_task
+        crisis_delay = analysis_delay + 60
+        crisis_task = detect_crisis_for_profile_task.apply_async(
+            args=[profile_id],
+            countdown=crisis_delay
+        )
+
         logger.info(
             f"Pipeline started for profile {profile_id}: "
             f"{len(fetch_task_ids)} fetch tasks, "
-            f"analysis scheduled in {analysis_delay}s"
+            f"analysis scheduled in {analysis_delay}s, "
+            f"crisis detection in {crisis_delay}s"
         )
 
         return {
@@ -78,7 +88,9 @@ def process_new_profile_task(profile_id: int):
             "subreddits": profile.subreddits,
             "fetch_task_ids": fetch_task_ids,
             "analysis_task_id": analysis_task.id,
-            "analysis_delay_seconds": analysis_delay
+            "analysis_delay_seconds": analysis_delay,
+            "crisis_task_id": crisis_task.id,
+            "crisis_delay_seconds": crisis_delay,
         }
 
 
@@ -137,6 +149,16 @@ def refresh_profile_task(profile_id: int, analyze: bool = True):
             )
             result["analysis_task_id"] = analysis_task.id
             result["analysis_delay_seconds"] = analysis_delay
+
+            # Queue crisis detection after analysis completes
+            from app.tasks.crisis_tasks import detect_crisis_for_profile_task
+            crisis_delay = analysis_delay + 60
+            crisis_task = detect_crisis_for_profile_task.apply_async(
+                args=[profile_id],
+                countdown=crisis_delay
+            )
+            result["crisis_task_id"] = crisis_task.id
+            result["crisis_delay_seconds"] = crisis_delay
 
         return result
 
@@ -212,13 +234,17 @@ def full_analysis_pipeline_task(profile_id: int):
         # Trigger analysis
         analysis_task = analyze_profile_posts_task.delay(profile_id)
 
-        # TODO: After analysis completes, check for crisis alerts
-        # TODO: Update trend calculations
-        # TODO: Send notifications if thresholds exceeded
+        # Queue crisis detection after analysis has time to finish (60s buffer)
+        from app.tasks.crisis_tasks import detect_crisis_for_profile_task
+        crisis_task = detect_crisis_for_profile_task.apply_async(
+            args=[profile_id],
+            countdown=60
+        )
 
         return {
             "status": "analysis_started",
             "profile_id": profile_id,
             "pending_posts": pending_count,
-            "analysis_task_id": analysis_task.id
+            "analysis_task_id": analysis_task.id,
+            "crisis_task_id": crisis_task.id,
         }
