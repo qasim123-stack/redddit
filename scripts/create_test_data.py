@@ -23,14 +23,18 @@ def create_test_data():
             print(f"✅ Test user already exists (ID: {existing_user.id})")
             user = existing_user
         else:
-            # Create test user
+            # Create test user with a real bcrypt-hashed password
+            from passlib.context import CryptContext
+            pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+            hashed = pwd_context.hash("testpassword123")
+
             user = User(
                 email="test@example.com",
                 full_name="Test User",
-                hashed_password="not_a_real_password_hash",  # Not for production!
+                hashed_password=hashed,
                 is_active=True,
                 is_verified=True,
-                subscription_tier="free",
+                subscription_tier="pro",
                 created_at=datetime.utcnow(),
                 updated_at=datetime.utcnow(),
             )
@@ -96,22 +100,23 @@ def create_test_data():
             db.refresh(profile)
             print(f"✅ Created test profile (ID: {profile.id})")
 
+        user_id = user.id
+        profile_id = profile.id
+
         print("\n" + "="*60)
-        print("🎉 Test data created successfully!")
+        print("Test data ready!")
         print("="*60)
         print(f"\nUser Details:")
         print(f"  - ID: {user.id}")
         print(f"  - Email: {user.email}")
-        print(f"  - Name: {user.full_name}")
+        print(f"  - Password: testpassword123")
         print(f"\nProfile Details:")
         print(f"  - ID: {profile.id}")
         print(f"  - Name: {profile.name}")
         print(f"  - Subreddits: {', '.join(profile.subreddits)}")
         print(f"  - Keywords: {', '.join(profile.keywords)}")
         print("\n" + "="*60)
-        print("💡 Use these IDs when testing:")
-        print(f"   - user_id={user.id}")
-        print(f"   - profile_id={profile.id}")
+        print(f"  user_id={user_id}  |  profile_id={profile_id}")
         print("="*60)
 
         return user, profile
