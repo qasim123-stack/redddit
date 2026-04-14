@@ -7,6 +7,9 @@ from app.models import User, UserPreferences
 from app.schemas.auth import UserRegister, UserLogin, AuthResponse, UserResponse, Token
 from app.core.security import verify_password, get_password_hash, create_access_token
 from datetime import datetime
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+import secrets
 import logging
 
 logger = logging.getLogger(__name__)
@@ -180,3 +183,65 @@ def get_current_user_info(token: str, db: Session = Depends(get_db)):
         )
 
     return UserResponse.model_validate(user)
+
+
+class GoogleAuthRequest(BaseModel):
+    email: EmailStr
+    full_name: Optional[str] = None
+    google_id: str
+    avatar_url: Optional[str] = None
+
+
+@router.post("/google", response_model=AuthResponse)
+def google_auth(payload: GoogleAuthRequest, db: Session = Depends(get_db)):
+    """
+    Called by NextAuth after a successful Google sign-in.
+    Finds the existing user or creates a new one, then returns a JWT.
+    """
+    user = db.exec(select(User).where(User.email == payload.email)).first()
+
+    if not user:
+        # Create new user — random unusable password so they can't log in with password
+        user = User(
+            email=payload.email,
+            full_name=payload.full_name,
+            hashed_password=get_password_hash(secrets.token_hex(32)),
+            is_active=True,
+            is_verified=True,  # Google has already verified the email
+            subscription_tier="free",
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        preferences = UserPreferences(
+            user_id=user.id,
+            notification_email=True,
+            notification_in_app=True,
+            notification_crisis_alerts=True,
+            notification_daily_summary=True,
+            notification_trending_topics=True,
+            theme="light",
+            timezone="UTC",
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+        )
+        db.add(preferences)
+        db.commit()
+        logger.info(f"New user created via Google OAuth: {user.email} (ID: {user.id})")
+    else:
+        user.last_login_at = datetime.utcnow()
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        logger.info(f"Existing user signed in via Google OAuth: {user.email} (ID: {user.id})")
+
+    access_token = create_access_token(data={"sub": str(user.id), "email": user.email})
+
+    return AuthResponse(
+        user=UserResponse.model_validate(user),
+        access_token=access_token,
+        token_type="bearer"
+    )

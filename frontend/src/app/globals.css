@@ -1,0 +1,112 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+/* ── Approved design tokens (from preview-auth.html) ── */
+:root {
+  /* Backgrounds */
+  --bg-0: #0d0d0f;
+  --bg-1: #111113;
+  --bg-2: #161618;
+  --bg-3: #1c1c1f;
+  --bg-4: #242428;
+
+  /* Brand */
+  --reddit-orange:  #FF4500;
+  --reddit-orange2: #FF6534;
+  --purple:         #7c3aed;
+
+  /* Text */
+  --text-1: #f0f0f0;
+  --text-2: #a0a0a8;
+  --text-3: #606068;
+
+  /* Semantic tokens */
+  --background:         var(--bg-1);
+  --foreground:         var(--text-1);
+  --card:               var(--bg-2);
+  --card-foreground:    var(--text-1);
+  --popover:            var(--bg-2);
+  --popover-foreground: var(--text-1);
+  --primary:            var(--reddit-orange);
+  --primary-foreground: #ffffff;
+  --secondary:          var(--bg-3);
+  --secondary-foreground: var(--text-2);
+  --muted:              var(--bg-3);
+  --muted-foreground:   var(--text-3);
+  --accent:             var(--purple);
+  --accent-foreground:  #ffffff;
+  --destructive:        #ef4444;
+  --border:             rgba(255,255,255,0.07);
+  --input:              var(--bg-3);
+  --ring:               rgba(255,69,0,0.5);
+  --radius:             0.75rem;
+
+  /* Sentiment */
+  --positive: #22c55e;
+  --negative: #ef4444;
+  --neutral:  #eab308;
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground antialiased; }
+  html { @apply font-sans; }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a2a2d; border-radius: 999px; }
+
+/* ── Gradient text utility ── */
+.gradient-text {
+  background: linear-gradient(90deg, #FF4500 0%, #ff8c69 45%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Orange glow button shadow ── */
+.btn-glow {
+  box-shadow: 0 0 24px rgba(255,69,0,0.4), 0 4px 12px rgba(255,69,0,0.2);
+}
+.btn-glow:hover {
+  box-shadow: 0 0 36px rgba(255,69,0,0.55), 0 6px 20px rgba(255,69,0,0.3);
+}
+
+/* ── Input focus ring ── */
+.input-reddit:focus {
+  border-color: rgba(255,69,0,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(255,69,0,0.1) !important;
+}
