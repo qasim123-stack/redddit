@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Play, Pause, RefreshCw, Copy, Trash2,
   Clock, FileText, Hash, Globe, Zap,
-  MoreHorizontal, CheckCircle2, AlertCircle,
+  MoreHorizontal, CheckCircle2, AlertCircle, ExternalLink,
 } from "lucide-react";
 import type { Profile } from "@/lib/api/profiles";
 
@@ -310,6 +311,24 @@ export function ProfileCard({ profile, index, onActivate, onDeactivate, onRefres
             {profile.keywords!.length}
           </div>
         )}
+
+        {/* View Posts link */}
+        <Link
+          href={`/profiles/${profile.id}/posts`}
+          title="View posts feed"
+          style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: "rgba(255,69,0,0.07)", border: "1px solid rgba(255,69,0,0.18)",
+            color: "#FF6534", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            textDecoration: "none", flexShrink: 0,
+            transition: "background 0.15s, border-color 0.15s",
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,69,0,0.15)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,69,0,0.07)"; }}
+        >
+          <ExternalLink size={13} />
+        </Link>
       </div>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

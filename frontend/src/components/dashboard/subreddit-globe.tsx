@@ -20,7 +20,9 @@ const GlobeInner = dynamic(() => import("./subreddit-globe-inner"), {
   ),
 });
 
-export function SubredditGlobe() {
+interface SubredditGlobeProps { subredditCount?: number }
+
+export function SubredditGlobe({ subredditCount = 0 }: SubredditGlobeProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -49,7 +51,7 @@ export function SubredditGlobe() {
         border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, overflow: "hidden",
       }}>
         {[
-          { label: "Subreddits", value: "16" },
+          { label: "Subreddits", value: subredditCount > 0 ? String(subredditCount) : "—" },
           { label: "Countries", value: "14" },
           { label: "Live arcs", value: "5" },
         ].map((s, i) => (

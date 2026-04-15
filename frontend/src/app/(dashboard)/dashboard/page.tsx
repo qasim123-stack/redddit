@@ -7,12 +7,15 @@ import {
 } from "lucide-react";
 
 import { useAuthStore } from "@/lib/store/auth-store";
-import { fetchProfileSummary, type ProfileSummary } from "@/lib/api/dashboard";
+import {
+  fetchProfileSummary, fetchSentimentOverview, fetchRecentCrises, fetchTrendTopics,
+  type ProfileSummary, type SentimentData, type RecentCrisisAlert, type TrendTopic,
+} from "@/lib/api/dashboard";
 
 import { AnimatedGradientBg } from "@/components/dashboard/animated-bg";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { SentimentDonut } from "@/components/dashboard/sentiment-donut";
-import { ActivityTimeline } from "@/components/dashboard/activity-timeline";
+import { ActivityTimeline, type ActivityItem } from "@/components/dashboard/activity-timeline";
 import { SubredditGlobe } from "@/components/dashboard/subreddit-globe";
 import { TopicWordCloud } from "@/components/dashboard/topic-wordcloud";
 import { CrisisHeatmap } from "@/components/dashboard/crisis-heatmap";
@@ -24,10 +27,65 @@ const FADE_UP = (delay = 0) => ({
   transition: { duration: 0.45, ease: EASE, delay },
 });
 
+// Map crisis severity to activity severity type
+const SEV_MAP: Record<string, ActivityItem["severity"]> = {
+  critical: "critical",
+  high: "high",
+  medium: "medium",
+  low: "low",
+};
+
+function buildActivityItems(crises: RecentCrisisAlert[]): ActivityItem[] {
+  return crises.slice(0, 7).map((c) => ({
+    id: c.id,
+    type: c.status === "resolved" ? "resolved" : c.status === "acknowledged" ? "alert" : "crisis",
+    title: c.title,
+    subtitle: c.description ?? undefined,
+    time: formatTimeAgo(c.created_at),
+    severity: SEV_MAP[c.severity] ?? "medium",
+  }));
+}
+
+function formatTimeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+// Build CrisisHeatmap DayData from crisis alerts
+function buildHeatmapData(crises: RecentCrisisAlert[]) {
+  const SEV_RANK: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
+  const byDay: Record<string, { severity: number; count: number }> = {};
+
+  crises.forEach((c) => {
+    const day = c.created_at.slice(0, 10);
+    const sev = SEV_RANK[c.severity] ?? 1;
+    if (!byDay[day]) byDay[day] = { severity: 0, count: 0 };
+    byDay[day].count += 1;
+    byDay[day].severity = Math.max(byDay[day].severity, sev);
+  });
+
+  // Fill last 181 days so the heatmap always has full coverage
+  const today = new Date();
+  return Array.from({ length: 181 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (180 - i));
+    const dateStr = d.toISOString().slice(0, 10);
+    return { date: dateStr, ...(byDay[dateStr] ?? { severity: 0, count: 0 }) };
+  });
+}
+
 export default function DashboardPage() {
   const { user, token } = useAuthStore();
-  const [summary, setSummary] = useState<ProfileSummary | null>(null);
-  const [loading, setLoading]   = useState(true);
+  const [summary, setSummary]       = useState<ProfileSummary | null>(null);
+  const [sentiment, setSentiment]   = useState<SentimentData | null>(null);
+  const [crises, setCrises]         = useState<RecentCrisisAlert[]>([]);
+  const [topics, setTopics]         = useState<TrendTopic[]>([]);
+  const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const now = new Date();
@@ -38,10 +96,16 @@ export default function DashboardPage() {
     if (!token) { setLoading(false); return; }
     if (showRefresh) setRefreshing(true);
     try {
-      const data = await fetchProfileSummary(token);
-      setSummary(data);
-    } catch {
-      // Silently fail — widgets will show sample data
+      const [summaryData, sentimentData, crisesData, topicsData] = await Promise.allSettled([
+        fetchProfileSummary(token),
+        fetchSentimentOverview(token),
+        fetchRecentCrises(token),
+        fetchTrendTopics(token),
+      ]);
+      if (summaryData.status === "fulfilled")   setSummary(summaryData.value);
+      if (sentimentData.status === "fulfilled") setSentiment(sentimentData.value);
+      if (crisesData.status === "fulfilled")    setCrises(crisesData.value);
+      if (topicsData.status === "fulfilled")    setTopics(topicsData.value);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -51,13 +115,15 @@ export default function DashboardPage() {
   useEffect(() => { load(); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stats = summary?.summary;
+  const activeCrisisCount = crises.filter(c => c.status === "active").length;
+  const activityItems = buildActivityItems(crises);
+  const heatmapData = buildHeatmapData(crises);
+  const subredditCount = stats?.unique_subreddits_monitored ?? 0;
 
   return (
     <div style={{ minHeight: "100vh", position: "relative", fontFamily: "Inter, sans-serif" }}>
-      {/* Canvas background */}
       <AnimatedGradientBg />
 
-      {/* All content is above the canvas */}
       <div style={{ position: "relative", zIndex: 1 }}>
 
         {/* ── Topbar ── */}
@@ -68,7 +134,6 @@ export default function DashboardPage() {
             padding: "20px 28px 0",
           }}
         >
-          {/* Greeting */}
           <div>
             <h1 style={{
               margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: "-0.5px",
@@ -83,7 +148,6 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Right: refresh + notifications */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <motion.button
               onClick={() => load(true)}
@@ -112,12 +176,13 @@ export default function DashboardPage() {
               }}
             >
               <Bell size={15} style={{ color: "#a0a0a8" }} />
-              {/* Badge */}
-              <div style={{
-                position: "absolute", top: 7, right: 8, width: 7, height: 7,
-                borderRadius: "50%", background: "#FF4500",
-                boxShadow: "0 0 6px rgba(255,69,0,0.8)",
-              }} />
+              {activeCrisisCount > 0 && (
+                <div style={{
+                  position: "absolute", top: 7, right: 8, width: 7, height: 7,
+                  borderRadius: "50%", background: "#FF4500",
+                  boxShadow: "0 0 6px rgba(255,69,0,0.8)",
+                }} />
+              )}
             </motion.div>
           </div>
         </motion.div>
@@ -125,70 +190,41 @@ export default function DashboardPage() {
         {/* ── Stat Cards ── */}
         <motion.div
           {...FADE_UP(0.08)}
-          style={{
-            display: "flex", gap: 14, padding: "20px 28px 0",
-            flexWrap: "wrap",
-          }}
+          style={{ display: "flex", gap: 14, padding: "20px 28px 0", flexWrap: "wrap" }}
         >
-          <StatCard
-            label="Total Profiles"
-            value={stats?.total_profiles ?? 8}
-            icon={Users}
-            color="#FF4500"
-            delay={0.1}
-          />
-          <StatCard
-            label="Posts Fetched"
-            value={stats?.total_posts_fetched ?? 24310}
-            icon={FileText}
-            color="#7c3aed"
-            delay={0.18}
-          />
-          <StatCard
-            label="Analyses Done"
-            value={stats?.total_posts_analyzed ?? 19840}
-            icon={Brain}
-            color="#22c55e"
-            delay={0.26}
-          />
-          <StatCard
-            label="Active Crises"
-            value={3}
-            icon={Flame}
-            color="#ef4444"
-            delay={0.34}
-          />
+          <StatCard label="Total Profiles"  value={stats?.total_profiles    ?? 0} icon={Users}    color="#FF4500" delay={0.1}  />
+          <StatCard label="Posts Fetched"   value={stats?.total_posts_fetched  ?? 0} icon={FileText} color="#7c3aed" delay={0.18} />
+          <StatCard label="Analyses Done"   value={stats?.total_posts_analyzed ?? 0} icon={Brain}    color="#22c55e" delay={0.26} />
+          <StatCard label="Active Crises"   value={activeCrisisCount} icon={Flame} color="#ef4444" delay={0.34} />
         </motion.div>
 
         {/* ── Row 2: Sentiment + Activity ── */}
         <div style={{ display: "flex", gap: 14, padding: "14px 28px 0", alignItems: "stretch" }}>
-          {/* Sentiment donut — 38% */}
           <div style={{ flex: "0 0 calc(38% - 7px)", minWidth: 0 }}>
-            <SentimentDonut positive={11200} negative={4100} neutral={4540} />
+            <SentimentDonut
+              positive={sentiment?.positive ?? 0}
+              negative={sentiment?.negative ?? 0}
+              neutral={sentiment?.neutral ?? 0}
+            />
           </div>
-
-          {/* Activity timeline — 62% */}
           <div style={{ flex: "0 0 calc(62% - 7px)", minWidth: 0 }}>
-            <ActivityTimeline />
+            <ActivityTimeline items={activityItems.length > 0 ? activityItems : undefined} />
           </div>
         </div>
 
         {/* ── Row 3: Globe + Word Cloud ── */}
         <div style={{ display: "flex", gap: 14, padding: "14px 28px 0", alignItems: "stretch" }}>
-          {/* Globe — 45% */}
           <div style={{ flex: "0 0 calc(45% - 7px)", minWidth: 0 }}>
-            <SubredditGlobe />
+            <SubredditGlobe subredditCount={subredditCount} />
           </div>
-
-          {/* Word cloud — 55% */}
           <div style={{ flex: "0 0 calc(55% - 7px)", minWidth: 0 }}>
-            <TopicWordCloud />
+            <TopicWordCloud words={topics.length > 0 ? topics : undefined} />
           </div>
         </div>
 
         {/* ── Row 4: Crisis Heatmap ── */}
         <div style={{ padding: "14px 28px 28px" }}>
-          <CrisisHeatmap />
+          <CrisisHeatmap data={heatmapData} />
         </div>
       </div>
 

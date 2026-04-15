@@ -12,7 +12,9 @@ router = APIRouter(prefix="/posts", tags=["Posts"])
 
 @router.get("/", response_model=List[RedditPostRead])
 def get_posts(
+    profile_id: Optional[int] = None,
     subreddit: Optional[str] = None,
+    processing_status: Optional[str] = None,
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     min_score: Optional[int] = None,
@@ -22,7 +24,9 @@ def get_posts(
     """
     Get posts with optional filtering
 
+    - **profile_id**: Filter by monitoring profile ID
     - **subreddit**: Filter by subreddit name
+    - **processing_status**: Filter by status (pending, analyzed, failed)
     - **limit**: Number of posts to return (max 100)
     - **offset**: Pagination offset
     - **min_score**: Minimum score filter
@@ -31,8 +35,14 @@ def get_posts(
     # Build query with filters
     statement = select(RedditPost)
 
+    if profile_id:
+        statement = statement.where(RedditPost.profile_id == profile_id)
+
     if subreddit:
         statement = statement.where(RedditPost.subreddit == subreddit)
+
+    if processing_status:
+        statement = statement.where(RedditPost.processing_status == processing_status)
 
     if min_score:
         statement = statement.where(RedditPost.score >= min_score)

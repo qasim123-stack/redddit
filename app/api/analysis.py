@@ -269,6 +269,39 @@ def get_profile_analysis_results(
 # AGGREGATED INSIGHTS
 # ============================================
 
+@router.get("/sentiment-overview")
+def get_global_sentiment_overview(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_with_db),
+):
+    """
+    Get aggregated sentiment counts across ALL profiles for the current user.
+    Used by the dashboard donut chart.
+    """
+    # Get all profile IDs belonging to this user
+    profile_ids = db.exec(
+        select(Profile.id).where(Profile.user_id == current_user_id)
+    ).all()
+
+    if not profile_ids:
+        return {"positive": 0, "negative": 0, "neutral": 0, "total": 0}
+
+    analyses = db.exec(
+        select(AIAnalysis).where(AIAnalysis.profile_id.in_(profile_ids))
+    ).all()
+
+    positive = sum(1 for a in analyses if a.sentiment_label == "positive")
+    negative = sum(1 for a in analyses if a.sentiment_label == "negative")
+    neutral = sum(1 for a in analyses if a.sentiment_label in ("neutral", "mixed"))
+
+    return {
+        "positive": positive,
+        "negative": negative,
+        "neutral": neutral,
+        "total": len(analyses),
+    }
+
+
 @router.get("/profiles/{profile_id}/sentiment-summary")
 def get_sentiment_summary(
     profile_id: int,

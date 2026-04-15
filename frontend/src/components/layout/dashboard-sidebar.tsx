@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Users,
-  FileText,
+  Bookmark,
   Brain,
   Flame,
   TrendingUp,
@@ -18,13 +18,13 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { SnooIcon } from "@/components/icons/snoo";
 
 const NAV = [
-  { href: "/dashboard",   icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/profiles",    icon: Users,            label: "Profiles" },
-  { href: "/posts",       icon: FileText,         label: "Posts" },
-  { href: "/analysis",    icon: Brain,            label: "Analysis" },
-  { href: "/crisis",      icon: Flame,            label: "Crisis" },
-  { href: "/trends",      icon: TrendingUp,       label: "Trends" },
-  { href: "/settings",    icon: Settings,         label: "Settings" },
+  { href: "/dashboard",   icon: LayoutDashboard, label: "Dashboard"   },
+  { href: "/profiles",    icon: Users,            label: "Profiles"    },
+  { href: "/saved",       icon: Bookmark,         label: "Saved Posts" },
+  { href: "/analysis",    icon: Brain,            label: "Analysis"    },
+  { href: "/crisis",      icon: Flame,            label: "Crisis"      },
+  { href: "/trends",      icon: TrendingUp,       label: "Trends"      },
+  { href: "/settings",    icon: Settings,         label: "Settings"    },
 ];
 
 export function DashboardSidebar() {

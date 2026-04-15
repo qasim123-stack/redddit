@@ -14,94 +14,6 @@ import { ProfileCard } from "@/components/profiles/profile-card";
 import { CreateProfileModal } from "@/components/profiles/create-profile-modal";
 import { AnimatedGradientBg } from "@/components/dashboard/animated-bg";
 
-// ── Sample profiles shown when not authenticated ──
-const SAMPLE_PROFILES: Profile[] = [
-  {
-    id: 1, name: "SaaS Brand Monitor", description: "Track brand mentions & competitor activity across SaaS communities",
-    is_active: true, subreddits: ["saas", "startups", "entrepreneur", "SideProject"],
-    keywords: ["pricing", "churn", "customer service", "refund"],
-    competitor_keywords: ["competitor1"], polling_frequency_minutes: 30,
-    fetch_limit_per_subreddit: 50, historical_days: 30,
-    total_posts_fetched: 8420, total_posts_analyzed: 7190,
-    last_fetch_at: new Date(Date.now() - 18 * 60000).toISOString(),
-    created_at: new Date(Date.now() - 15 * 86400000).toISOString(),
-    updated_at: new Date().toISOString(),
-    enable_sentiment: true, enable_intent: true, enable_pain_detection: true,
-    enable_entity_extraction: false, enable_topic_extraction: true, enable_embedding: false,
-    crisis_threshold_multiplier: 2, trend_growth_threshold: 0.3,
-  },
-  {
-    id: 2, name: "AI/ML Community Pulse", description: "Monitor ML discussions for product feedback and emerging trends",
-    is_active: true, subreddits: ["MachineLearning", "artificial", "LocalLLaMA", "ChatGPT"],
-    keywords: ["GPT", "Claude", "pricing", "API", "latency"],
-    competitor_keywords: [], polling_frequency_minutes: 15,
-    fetch_limit_per_subreddit: 100, historical_days: 14,
-    total_posts_fetched: 12350, total_posts_analyzed: 12100,
-    last_fetch_at: new Date(Date.now() - 4 * 60000).toISOString(),
-    created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
-    updated_at: new Date().toISOString(),
-    enable_sentiment: true, enable_intent: true, enable_pain_detection: true,
-    enable_entity_extraction: true, enable_topic_extraction: true, enable_embedding: true,
-    crisis_threshold_multiplier: 2.5, trend_growth_threshold: 0.25,
-  },
-  {
-    id: 3, name: "Dev Tools Feedback", description: "Catch friction points and feature requests in dev communities",
-    is_active: false, subreddits: ["webdev", "programming", "devops"],
-    keywords: ["bug", "feature request", "broken", "alternative"],
-    competitor_keywords: ["competitor2"], polling_frequency_minutes: 60,
-    fetch_limit_per_subreddit: 25, historical_days: 60,
-    total_posts_fetched: 3210, total_posts_analyzed: 1870,
-    last_fetch_at: new Date(Date.now() - 6 * 3600000).toISOString(),
-    created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
-    updated_at: new Date().toISOString(),
-    enable_sentiment: true, enable_intent: false, enable_pain_detection: true,
-    enable_entity_extraction: false, enable_topic_extraction: false, enable_embedding: false,
-    crisis_threshold_multiplier: 2, trend_growth_threshold: 0.4,
-  },
-  {
-    id: 4, name: "Customer Pain Tracker", description: "Identify unmet needs and frustrations across target markets",
-    is_active: true, subreddits: ["smallbusiness", "Entrepreneur", "marketing"],
-    keywords: ["frustrated", "wish", "need", "problem", "hate"],
-    competitor_keywords: [], polling_frequency_minutes: 30,
-    fetch_limit_per_subreddit: 75, historical_days: 21,
-    total_posts_fetched: 5670, total_posts_analyzed: 5210,
-    last_fetch_at: new Date(Date.now() - 35 * 60000).toISOString(),
-    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-    updated_at: new Date().toISOString(),
-    enable_sentiment: true, enable_intent: true, enable_pain_detection: true,
-    enable_entity_extraction: true, enable_topic_extraction: true, enable_embedding: false,
-    crisis_threshold_multiplier: 1.8, trend_growth_threshold: 0.3,
-  },
-  {
-    id: 5, name: "Competitor Intel", description: "Watch competitor mentions and sentiment across communities",
-    is_active: false, subreddits: ["technology", "tech", "productivity"],
-    keywords: ["vs", "alternative", "switch", "better than", "worse than"],
-    competitor_keywords: ["CompA", "CompB", "CompC"], polling_frequency_minutes: 120,
-    fetch_limit_per_subreddit: 50, historical_days: 90,
-    total_posts_fetched: 990, total_posts_analyzed: 0,
-    last_fetch_at: null,
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-    updated_at: new Date().toISOString(),
-    enable_sentiment: true, enable_intent: false, enable_pain_detection: false,
-    enable_entity_extraction: true, enable_topic_extraction: false, enable_embedding: false,
-    crisis_threshold_multiplier: 2, trend_growth_threshold: 0.5,
-  },
-  {
-    id: 6, name: "Growth Hacking Watch", description: "Surface viral growth tactics and success stories",
-    is_active: true, subreddits: ["growth_hacking", "GrowthHacking", "digital_marketing"],
-    keywords: ["growth", "viral", "launch", "traction", "users"],
-    competitor_keywords: [], polling_frequency_minutes: 60,
-    fetch_limit_per_subreddit: 40, historical_days: 30,
-    total_posts_fetched: 2140, total_posts_analyzed: 1980,
-    last_fetch_at: new Date(Date.now() - 55 * 60000).toISOString(),
-    created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
-    updated_at: new Date().toISOString(),
-    enable_sentiment: true, enable_intent: true, enable_pain_detection: false,
-    enable_entity_extraction: false, enable_topic_extraction: true, enable_embedding: false,
-    crisis_threshold_multiplier: 2, trend_growth_threshold: 0.2,
-  },
-];
-
 type FilterStatus = "all" | "active" | "paused";
 
 export default function ProfilesPage() {
@@ -115,12 +27,12 @@ export default function ProfilesPage() {
   const [deleting, setDeleting]       = useState<number | null>(null);
 
   const load = async () => {
-    if (!token) { setProfiles(SAMPLE_PROFILES); setLoading(false); return; }
+    if (!token) { setLoading(false); return; }
     try {
       const data = await profilesApi.list(token);
-      setProfiles(data.length > 0 ? data : SAMPLE_PROFILES);
+      setProfiles(data);
     } catch {
-      setProfiles(SAMPLE_PROFILES);
+      toast.error("Failed to load profiles");
     } finally {
       setLoading(false);
     }
@@ -150,30 +62,25 @@ export default function ProfilesPage() {
     setProfiles(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p));
 
   const handleActivate = async (id: number) => {
-    if (!token) { patchLocal(id, { is_active: true }); return; }
+    if (!token) return;
     try { const p = await profilesApi.activate(id, token); patchLocal(id, p); toast.success("Profile activated"); }
     catch (e) { toast.error("Failed to activate", { description: e instanceof Error ? e.message : "" }); }
   };
 
   const handleDeactivate = async (id: number) => {
-    if (!token) { patchLocal(id, { is_active: false }); return; }
+    if (!token) return;
     try { const p = await profilesApi.deactivate(id, token); patchLocal(id, p); toast.success("Profile paused"); }
     catch (e) { toast.error("Failed to pause", { description: e instanceof Error ? e.message : "" }); }
   };
 
   const handleRefresh = async (id: number) => {
-    if (!token) { toast.info("Connect your account to refresh"); return; }
+    if (!token) return;
     try { await profilesApi.refresh(id, token); toast.success("Refresh started"); }
     catch (e) { toast.error("Failed to refresh", { description: e instanceof Error ? e.message : "" }); }
   };
 
   const handleClone = async (id: number) => {
-    if (!token) {
-      const orig = profiles.find(p => p.id === id)!;
-      setProfiles(prev => [...prev, { ...orig, id: Date.now(), name: `Copy of ${orig.name}`, is_active: false, total_posts_fetched: 0, total_posts_analyzed: 0, last_fetch_at: null }]);
-      toast.success("Profile cloned (demo)");
-      return;
-    }
+    if (!token) return;
     try { const p = await profilesApi.clone(id, token); setProfiles(prev => [...prev, p]); toast.success("Profile cloned"); }
     catch (e) { toast.error("Failed to clone", { description: e instanceof Error ? e.message : "" }); }
   };
@@ -181,8 +88,7 @@ export default function ProfilesPage() {
   const handleDelete = (id: number) => setDeleting(id);
 
   const confirmDelete = async () => {
-    if (!deleting) return;
-    if (!token) { setProfiles(prev => prev.filter(p => p.id !== deleting)); setDeleting(null); toast.success("Deleted (demo)"); return; }
+    if (!deleting || !token) return;
     try { await profilesApi.delete(deleting, token); setProfiles(prev => prev.filter(p => p.id !== deleting)); toast.success("Profile deleted"); }
     catch (e) { toast.error("Failed to delete", { description: e instanceof Error ? e.message : "" }); }
     finally { setDeleting(null); }

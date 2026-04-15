@@ -938,3 +938,30 @@ class SystemMetric(SystemMetricBase, table=True):
 
 class SystemMetricCreate(SystemMetricBase):
     pass
+
+
+# ============================================
+# SAVED POSTS
+# ============================================
+
+class SavedPost(SQLModel, table=True):
+    __tablename__ = "saved_posts"
+    __table_args__ = (
+        Index("idx_saved_posts_user_id", "user_id"),
+        Index("idx_saved_posts_post_id", "post_id"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    post_id: int = Field(foreign_key="reddit_posts.id", index=True)
+    note: Optional[str] = Field(default=None, sa_column=Column(Text))
+    saved_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class SavedPostRead(SQLModel):
+    id: int
+    user_id: int
+    post_id: int
+    note: Optional[str]
+    saved_at: datetime
+    post: Optional["RedditPostRead"] = None

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/register", "/", "/api/auth","/dashboard","/profiles"];
+const PUBLIC_PATHS = ["/login", "/register", "/", "/api/auth", "/dashboard", "/profiles", "/saved", "/crisis", "/trends", "/analysis", "/settings"];
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;

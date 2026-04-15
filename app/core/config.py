@@ -1,11 +1,18 @@
 """Application configuration and settings"""
 
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 from typing import List
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
+
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra='allow'
+    )
 
     # Application
     APP_NAME: str = "Reddit AI Platform"
@@ -64,10 +71,6 @@ class Settings(BaseSettings):
     def subreddit_list(self) -> List[str]:
         """Convert comma-separated subreddits to list"""
         return [s.strip() for s in self.SUBREDDITS_TO_MONITOR.split(",")]
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
 
 # Global settings instance
