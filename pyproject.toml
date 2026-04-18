@@ -1,0 +1,63 @@
+[tool.poetry]
+name = "reddit-ai-platform"
+version = "0.1.0"
+description = "Reddit-Powered AI Marketing and Intelligence Platform"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "app"}, {include = "tests"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+# Core Framework
+fastapi = "^0.104.1"
+uvicorn = {extras = ["standard"], version = "^0.24.0"}
+pydantic = {extras = ["email"], version = "^2.5.0"}
+pydantic-settings = "^2.1.0"
+python-dotenv = "^1.0.0"
+
+# Database
+sqlmodel = "^0.0.14"
+sqlalchemy = "^2.0.23"
+psycopg2-binary = "^2.9.9"
+asyncpg = "^0.29.0"
+alembic = "^1.12.1"
+
+# Authentication & Security
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+bcrypt = "^4.0.1"
+
+# Background Tasks
+# redis must be <5.0.0 due to celery[redis]==5.3.4 constraint
+celery = {extras = ["redis"], version = "^5.3.4"}
+redis = ">=4.5.2,<5.0.0"
+
+# Reddit API
+praw = "^7.7.1"
+
+# AI Analysis (GPT-4o-mini)
+openai = ">=1.0.0"
+
+# HTTP Client
+httpx = "^0.25.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+pytest-asyncio = "^0.21.1"
+black = "^23.11.0"
+isort = "^5.12.0"
+flake8 = "^6.1.0"
+mypy = "^1.7.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+line_length = 100

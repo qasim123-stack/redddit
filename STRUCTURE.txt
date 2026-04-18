@@ -1,0 +1,194 @@
+Reddit AI Platform - Complete File Structure
+=============================================
+
+redddit/
+│
+├── 📄 Configuration Files
+│   ├── pyproject.toml              # Poetry dependencies
+│   ├── requirements.txt            # Pip fallback dependencies
+│   ├── docker-compose.yml          # Docker services (Postgres, Redis, pgAdmin)
+│   ├── .env                        # Environment variables
+│   ├── .env.example                # Template for .env
+│   ├── .gitignore                  # Git ignore rules
+│   ├── Makefile                    # Convenience commands
+│   └── alembic.ini                 # Database migrations (future)
+│
+├── 📜 Documentation
+│   ├── README.md                   # Full documentation
+│   ├── QUICKSTART.md               # Quick setup guide
+│   ├── PROJECT_SUMMARY.md          # This summary
+│   └── STRUCTURE.txt               # This file
+│
+├── 🚀 Executable Scripts
+│   ├── run_api.sh                  # Start FastAPI server
+│   ├── run_celery.sh               # Start Celery worker
+│   └── test_structure.py           # Validate project structure
+│
+├── 📦 app/ - Main Application
+│   │
+│   ├── __init__.py                 # Package marker
+│   ├── main.py                     # FastAPI app entry point ⭐
+│   │
+│   ├── 🔧 core/ - Core Configuration
+│   │   ├── __init__.py
+│   │   ├── config.py               # Settings from .env
+│   │   └── celery_app.py           # Celery configuration
+│   │
+│   ├── 🗄️ database/ - Database Layer
+│   │   ├── __init__.py
+│   │   └── connection.py           # SQLAlchemy session & Base
+│   │
+│   ├── 📊 models/ - SQLAlchemy ORM Models
+│   │   ├── __init__.py
+│   │   ├── post.py                 # Post table schema
+│   │   └── comment.py              # Comment table schema
+│   │
+│   ├── 📋 schemas/ - Pydantic Schemas
+│   │   ├── __init__.py
+│   │   ├── post.py                 # Post request/response schemas
+│   │   └── comment.py              # Comment request/response schemas
+│   │
+│   ├── 🌐 api/ - REST API Endpoints
+│   │   ├── __init__.py
+│   │   ├── posts.py                # Post CRUD endpoints
+│   │   └── monitoring.py           # Monitoring control endpoints
+│   │
+│   ├── 🔬 services/ - Business Logic
+│   │   ├── __init__.py
+│   │   └── reddit_monitor.py       # PRAW wrapper service
+│   │
+│   └── ⚙️ tasks/ - Celery Tasks
+│       ├── __init__.py
+│       └── reddit_tasks.py         # Background tasks
+│
+└── 🗑️ Legacy/Testing
+    └── reddit-test.py              # Original test file
+
+Total: 35+ files across 10 directories
+
+
+Key Files Explained:
+====================
+
+🌟 app/main.py
+   - FastAPI application setup
+   - CORS middleware
+   - Health check endpoints
+   - Router registration
+
+🌟 app/core/config.py
+   - Settings class with Pydantic
+   - Loads from .env
+   - Database URLs, API keys, etc.
+
+🌟 app/services/reddit_monitor.py
+   - RedditMonitor class
+   - PRAW integration
+   - Stream submissions/comments
+   - Parse Reddit JSON
+
+🌟 app/tasks/reddit_tasks.py
+   - fetch_hot_posts_task()
+   - fetch_post_comments_task()
+   - monitor_subreddit_stream()
+
+🌟 app/api/posts.py
+   - GET /api/posts (list with filters)
+   - GET /api/posts/{id} (with comments)
+   - GET /api/posts/stats/summary
+
+🌟 app/api/monitoring.py
+   - POST /api/monitor/fetch-hot-posts
+   - POST /api/monitor/bulk-fetch
+   - GET /api/monitor/task-status/{id}
+
+🌟 docker-compose.yml
+   - PostgreSQL on port 5432
+   - Redis on port 6379
+   - pgAdmin on port 5050
+
+
+API Endpoints Summary:
+======================
+
+Health:
+  GET  /                              Root health check
+  GET  /health                        Detailed status
+  GET  /docs                          Swagger UI
+  GET  /redoc                         ReDoc UI
+
+Posts:
+  GET  /api/posts                     List posts (filterable)
+  GET  /api/posts/{post_id}           Get post with comments
+  GET  /api/posts/{post_id}/comments  Get comments only
+  GET  /api/posts/subreddit/{name}    Get subreddit posts
+  GET  /api/posts/stats/summary       Database statistics
+
+Monitoring:
+  POST /api/monitor/fetch-hot-posts   Trigger post fetch
+  POST /api/monitor/fetch-comments    Trigger comment fetch
+  POST /api/monitor/bulk-fetch        Multi-subreddit fetch
+  GET  /api/monitor/task-status/{id}  Check task status
+  GET  /api/monitor/monitored-subreddits  List tracked subs
+
+
+Database Schema:
+================
+
+posts
+  - id (PK)
+  - reddit_id (unique)
+  - title
+  - selftext
+  - url, permalink
+  - author, subreddit
+  - score, ups, num_comments
+  - created_utc
+  - (+ 15 more fields)
+
+comments
+  - id (PK)
+  - reddit_id (unique)
+  - body
+  - author, subreddit
+  - link_id (FK -> posts)
+  - parent_id
+  - depth (nesting level)
+  - score, ups
+  - created_utc
+  - (+ 10 more fields)
+
+Relationships:
+  Post.comments -> List[Comment]
+  Comment.post -> Post
+
+
+Environment Variables:
+======================
+
+Required in .env:
+
+# Reddit API
+REDDIT_CLIENT_ID=your_id
+REDDIT_CLIENT_SECRET=your_secret
+REDDIT_USER_AGENT=your_agent
+
+# Database
+DATABASE_URL=postgresql://...
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# Monitoring
+SUBREDDITS_TO_MONITOR=Python,AI,MachineLearning
+
+
+How to Run:
+===========
+
+1. Install:     poetry install
+2. Docker:      docker compose up -d
+3. API:         make run-api
+4. Celery:      make run-celery
+5. Test:        curl http://localhost:8000/health
+

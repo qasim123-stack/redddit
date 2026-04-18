@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose ps:*)",
+      "Bash(PYTHONIOENCODING=utf-8 python scripts/test_ai_analysis.py)",
+      "Bash(PYTHONIOENCODING=utf-8 python -W ignore scripts/test_ai_analysis.py)",
+      "Bash(curl -s http://localhost:8000/docs)",
+      "Bash(PGPASSWORD=qasim123 psql -h localhost -p 5433 -U admin -d reddit-database -c \"SELECT id, email, hashed_password FROM users WHERE email = ''qa651285@gmail.com'';\")",
+      "Bash(docker exec:*)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c \":*)",
+      "Bash(pip show:*)"
+    ]
+  }
+}
